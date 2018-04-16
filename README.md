@@ -1,7 +1,7 @@
 screenshot-as-a-service
 =======================
 
-> Website screenshot service powered by [Node.js][nodejs] and and [Google Chrome Pupeeter][pupeeter].
+> Website screenshot service powered by [Node.js][nodejs] and and [Google Chrome Pupeeteer][pupeeteer].
 
 
 Requirements
@@ -25,5 +25,5 @@ This project is released under [ISC License](LICENSE.md).
 
 
 [nodejs]: https://nodejs.org/
-[pupeeter]: https://github.com/GoogleChrome/puppeteer
+[pupeeteer]: https://github.com/GoogleChrome/puppeteer
 [npm]: https://www.npmjs.com/
