@@ -1,3 +1,4 @@
+import asyncMiddleware from 'async-middleware';
 import express from 'express';
 import validator from 'express-validator/check';
 import fs from 'fs';
@@ -5,54 +6,80 @@ import util from 'util';
 
 import ScreenshotService from './lib/ScreenshotService';
 
+const { wrap } = asyncMiddleware;
 const { check, validationResult } = validator;
 const { promisify } = util;
 const readFile = promisify(fs.readFile);
 
-const asyncMiddleware = fn => (request, response, next) => {
-  Promise.resolve(fn(request, response, next)).catch(next);
-};
+/**
+ * Create an error response body from an error
+ * @param {Error} error An error
+ * @param {boolean} showStackTraces Whether to include stack trace in the response
+ * @return {Object} Response body
+ */
+function errorResponseBody(error, showStackTraces) {
+  return Object.assign(
+    { error: error.message },
+    showStackTraces ? { stack: error.stack.split('\n') } : {}
+  );
+}
+
+/**
+ * Wrap a response handler that adds validation results checks and error
+ * handling. In case of error, return a JSON response contanin
+ * @param {function} handler Actual request handler. Can throw errors or return a Promise.
+ * @param {boolean} showStackTraces Whether to display stack traces in case of handler error.
+ * @return {function} Returns an Express-compatible middleware.
+ */
+function jsonRequestHandler(handler, showStackTraces) {
+  return wrap(async (request, response) => {
+    // If request check failed, returns HTTP 400
+    const errors = validationResult(request);
+    if (!errors.isEmpty()) {
+      return response.status(400).json({ errors: errors.mapped() });
+    }
+
+    // Delegate request handling to actual handler
+    try {
+      return await handler(request, response);
+    }
+    // If actual handler fails, returns HTTP 500
+    catch(error) {
+      return response.status(500).json(errorResponseBody(error, showStackTraces));
+    }
+  });
+}
 
 async function startServer(config) {
   const { host, port, debug, logger, cacheTimeout, imageType } = config;
 
   const app = express();
+  if (debug) {
+    app.set('json spaces', 2);
+  }
+
   const screenshotService = new ScreenshotService({ cacheTimeout, logger, imageType });
   await screenshotService.start();
 
+  // /screenshot route
   app.get('/screenshot', [
     check('url').exists().withMessage('Missing "url" parameter'),
     check('url').isURL().withMessage('Invalid "url" parameter: must be an URL'),
-    asyncMiddleware(async (request, response) => {
-      const errors = validationResult(request);
-      if (!errors.isEmpty()) {
-        return response.status(400).json({ errors: errors.mapped() });
-      }
+    jsonRequestHandler(async (request, response) => {
+      const { url } = request.query;
 
-      try {
-        const url = request.query.url;
+      // Take screenshot
+      const path = await screenshotService.takeScreenshot({ url });
 
-        // Take screenshot
-        const path = await screenshotService.takeScreenshot({ url });
-
-        // Write response
-        const img = await readFile(path);
-        response.writeHead(200, { 'Content-Type': `image/${imageType}` });
-        if (config.cors) {
-          response.setHeader('Access-Control-Allow-Origin', '*');
-          response.setHeader('Access-Control-Expose-Headers', 'Content-Type');
-        }
-        response.end(img, 'binary');
+      // Write response
+      const image = await readFile(path);
+      response.writeHead(200, { 'Content-Type': `image/${imageType}` });
+      if (config.cors) {
+        response.setHeader('Access-Control-Allow-Origin', '*');
+        response.setHeader('Access-Control-Expose-Headers', 'Content-Type');
       }
-      catch (e) {
-        response.writeHead(500);
-        const body = { error: e.message };
-        if (debug) {
-          body.stack = e.stack.split('\n');
-        }
-        response.end(JSON.stringify(body, null, debug ? 2 : 0));
-      }
-    }),
+      response.end(image, 'binary');
+    }, debug)
   ]);
 
   // Start listening
@@ -72,7 +99,7 @@ startServer({
   host: process.env.HOST || '0.0.0.0',
   debug: env === 'development' || false,
   logger: console,
-  cacheTimeout: env === 'development' ? 5000 : 3600000,
+  cacheTimeout: env === 'development' ? 1000 : 3600000,
   imageType: 'jpeg',
 }).then(instances => {
   server = instances.server;
