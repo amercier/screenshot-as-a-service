@@ -1,9 +1,11 @@
 import express from 'express';
+import validator from 'express-validator/check';
 import fs from 'fs';
 import util from 'util';
 
 import ScreenshotService from './lib/ScreenshotService';
 
+const { check, validationResult } = validator;
 const { promisify } = util;
 const readFile = promisify(fs.readFile);
 
@@ -18,32 +20,40 @@ async function startServer(config) {
   const screenshotService = new ScreenshotService({ cacheTimeout, logger, imageType });
   await screenshotService.start();
 
-  app.get('/screenshot', asyncMiddleware(async (request, response) => {
-
-    try {
-      const url = 'https://example.com';
-
-      // Take screenshot
-      const path = await screenshotService.takeScreenshot({ url });
-
-      // Write response
-      const img = await readFile(path);
-      response.writeHead(200, { 'Content-Type': `image/${imageType}` });
-      if (config.cors) {
-        response.setHeader('Access-Control-Allow-Origin', '*');
-        response.setHeader('Access-Control-Expose-Headers', 'Content-Type');
+  app.get('/screenshot', [
+    check('url').exists().withMessage('Missing "url" parameter'),
+    check('url').isURL().withMessage('Invalid "url" parameter: must be an URL'),
+    asyncMiddleware(async (request, response) => {
+      const errors = validationResult(request);
+      if (!errors.isEmpty()) {
+        return response.status(400).json({ errors: errors.mapped() });
       }
-      response.end(img, 'binary');
-    }
-    catch (e) {
-      response.writeHead(500);
-      const body = { error: e.message };
-      if (debug) {
-        body.stack = e.stack.split('\n');
+
+      try {
+        const url = request.query.url;
+
+        // Take screenshot
+        const path = await screenshotService.takeScreenshot({ url });
+
+        // Write response
+        const img = await readFile(path);
+        response.writeHead(200, { 'Content-Type': `image/${imageType}` });
+        if (config.cors) {
+          response.setHeader('Access-Control-Allow-Origin', '*');
+          response.setHeader('Access-Control-Expose-Headers', 'Content-Type');
+        }
+        response.end(img, 'binary');
       }
-      response.end(JSON.stringify(body, null, debug ? 2 : 0));
-    }
-  }));
+      catch (e) {
+        response.writeHead(500);
+        const body = { error: e.message };
+        if (debug) {
+          body.stack = e.stack.split('\n');
+        }
+        response.end(JSON.stringify(body, null, debug ? 2 : 0));
+      }
+    }),
+  ]);
 
   // Start listening
   const server = app.listen(port, host, () => {

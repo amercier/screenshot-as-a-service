@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "express": "^4.16.3",
+    "express-validator": "^5.1.2",
     "fs-extra": "^5.0.0",
     "md5": "^2.2.1",
     "os-tmpdir": "^1.0.2",
