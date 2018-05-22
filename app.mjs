@@ -51,14 +51,14 @@ function jsonRequestHandler(handler, showStackTraces) {
 }
 
 async function startServer(config) {
-  const { host, port, debug, logger, cacheTimeout, imageType } = config;
+  const { host, port, debug, logger, cacheTimeout, imageType, disableSandbox } = config;
 
   const app = express();
   if (debug) {
     app.set('json spaces', 2);
   }
 
-  const screenshotService = new ScreenshotService({ cacheTimeout, logger, imageType });
+  const screenshotService = new ScreenshotService({ cacheTimeout, logger, imageType, disableSandbox });
   await screenshotService.start();
 
   // /screenshot route
@@ -103,6 +103,7 @@ startServer({
   logger: console,
   cacheTimeout: env === 'development' ? 1000 : 3600000,
   imageType: 'jpeg',
+  disableSandbox: true,
   defaults: {
     width: 1280,
     height: 720,
