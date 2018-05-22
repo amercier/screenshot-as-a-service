@@ -111,6 +111,9 @@ startServer({
 }).then(instances => {
   server = instances.server;
   screenshotService = instances.screenshotService;
+}).catch(error => {
+  console.log(`Unhandled error: ${error}. Terminating application`);
+  process.exit(1);
 });
 
 async function stopApp() {
