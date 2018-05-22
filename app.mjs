@@ -115,6 +115,7 @@ let server, screenshotService;
 startServer({
   port: process.env.PORT || 8000,
   host: process.env.HOST || '0.0.0.0',
+  cors: true,
   debug: env === 'development' || false,
   logger: console,
   cacheTimeout: env === 'development' ? 1000 : 3600000,
