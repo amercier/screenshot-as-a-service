@@ -65,11 +65,13 @@ async function startServer(config) {
   app.get('/screenshot', [
     check('url').exists().withMessage('Missing "url" parameter'),
     check('url').isURL().withMessage('Invalid "url" parameter: must be an URL'),
+    check('width').optional().isInt().withMessage('Invalid "width" parameter: must be an integer').toInt(),
+    check('height').optional().isInt().withMessage('Invalid "height" parameter: must be an integer').toInt(),
     jsonRequestHandler(async (request, response) => {
-      const { url } = request.query;
+      const { url, width, height } = Object.assign({}, config.defaults, request.query);
 
       // Take screenshot
-      const path = await screenshotService.takeScreenshot({ url });
+      const path = await screenshotService.takeScreenshot({ url, width, height });
 
       // Write response
       const image = await readFile(path);
@@ -101,6 +103,10 @@ startServer({
   logger: console,
   cacheTimeout: env === 'development' ? 1000 : 3600000,
   imageType: 'jpeg',
+  defaults: {
+    width: 1280,
+    height: 720,
+  },
 }).then(instances => {
   server = instances.server;
   screenshotService = instances.screenshotService;
