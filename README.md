@@ -1,4 +1,4 @@
-screenshot-as-a-service
+Screenshot as a Service
 =======================
 
 > Website screenshot service powered by [Node.js][nodejs] and and [Google Chrome Pupeeteer][pupeeteer].

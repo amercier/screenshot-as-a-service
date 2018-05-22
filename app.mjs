@@ -61,6 +61,9 @@ async function startServer(config) {
   const screenshotService = new ScreenshotService({ cacheTimeout, logger, imageType, disableSandbox });
   await screenshotService.start();
 
+  // Static files
+  app.use(express.static('public'));
+
   // /screenshot route
   app.get('/screenshot', [
     check('url').exists().withMessage('Missing "url" parameter'),
