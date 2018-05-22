@@ -66,10 +66,23 @@ async function startServer(config) {
 
   // /screenshot route
   app.get('/screenshot', [
-    check('url').exists().withMessage('Missing "url" parameter'),
-    check('url').isURL().withMessage('Invalid "url" parameter: must be an URL'),
-    check('width').optional().isInt().withMessage('Invalid "width" parameter: must be an integer').toInt(),
-    check('height').optional().isInt().withMessage('Invalid "height" parameter: must be an integer').toInt(),
+    check('url')
+      .exists()
+      .withMessage('Missing "url" parameter'),
+    check('url')
+      .isURL()
+      .withMessage('Invalid "url" parameter: must be an URL')
+      .customSanitizer(value => (/^[a-z]+:\/\//).test(value) ? value : `http://${value}`),
+    check('width')
+      .optional()
+      .isInt()
+      .withMessage('Invalid "width" parameter: must be an integer')
+      .toInt(),
+    check('height')
+      .optional()
+      .isInt()
+      .withMessage('Invalid "height" parameter: must be an integer')
+      .toInt(),
     jsonRequestHandler(async (request, response) => {
       const { url, width, height } = Object.assign({}, config.defaults, request.query);
 
