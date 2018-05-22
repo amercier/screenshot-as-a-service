@@ -1,4 +1,5 @@
 import asyncMiddleware from 'async-middleware';
+import cors from 'cors';
 import express from 'express';
 import validator from 'express-validator/check';
 import fs from 'fs';
@@ -64,6 +65,11 @@ async function startServer(config) {
   // Static files
   app.use(express.static('public'));
 
+  // CORS
+  if (config.cors) {
+    app.use(cors())
+  }
+
   // /screenshot route
   app.get('/screenshot', [
     check('url')
@@ -92,10 +98,6 @@ async function startServer(config) {
       // Write response
       const image = await readFile(path);
       response.writeHead(200, { 'Content-Type': `image/${imageType}` });
-      if (config.cors) {
-        response.setHeader('Access-Control-Allow-Origin', '*');
-        response.setHeader('Access-Control-Expose-Headers', 'Content-Type');
-      }
       response.end(image, 'binary');
     }, debug)
   ]);
