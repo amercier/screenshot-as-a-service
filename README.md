@@ -41,17 +41,18 @@ URL: `http://localhost:8000/screenshot`
 
 ### Examples
 
-- `http://example.org/` with default settings:
+- `http://example.org/` with default settings:<br>
 http://localhost:8000/screenshot?url=http%3A%2F%2Fexample.org%2F
 
-- `https://www.google.com/` at 800x600: http://localhost:8000/screenshot?url=https%3A%2F%2Fgoogle.com%2F&width=800&height=600
+- `https://www.google.com/` at 800x600:<br>
+http://localhost:8000/screenshot?url=https%3A%2F%2Fgoogle.com%2F&width=800&height=600
 
 ### Live examples
 
-- `http://example.org/` with default settings:
-https://screenshots.amercier.com/screenshot?url=http%3A%2F%2Fexample.org%2F
+- `http://example.org/` with default settings:<br>
+https://screenshot.amercier.com/screenshot?url=http%3A%2F%2Fexample.org%2F
 
-- `https://www.google.com/` at 800x600: https://screenshots.amercier.com/screenshot?url=https%3A%2F%2Fgoogle.com%2F&width=800&height=600
+- `https://www.google.com/` at 800x600:<br> https://screenshot.amercier.com/screenshot?url=https%3A%2F%2Fgoogle.com%2F&width=800&height=600
 
 
 
